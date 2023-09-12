@@ -33,6 +33,7 @@ def calc_true_res(nx, ny):
 
 
 def tile_array(num_tiles_x=6, num_tiles_y=6):
+    # initial matrix which calculates and stores the x,y coordinates of each tile
     tile_coord_grid = np.empty((num_tiles_x, num_tiles_y), dtype=object)
     w, h = calc_true_res(num_tiles_x, num_tiles_y)
 
@@ -44,6 +45,9 @@ def tile_array(num_tiles_x=6, num_tiles_y=6):
 
     num_rows = num_tiles_x*num_tiles_y
     matrix_shape = (num_rows, 4)
+
+    # Cool idea: use matrix--instead of objects--to keep track of individual tile
+    #  properties; mainly, its x,y coordinates, and the area it occupies.
     raw_matrix = np.empty(matrix_shape)
     counter = 0
 
@@ -59,8 +63,6 @@ def tile_array(num_tiles_x=6, num_tiles_y=6):
                 # Another border_size--after it's done calculating the coordinates--to shift things
                 tile_coord_grid[i, j] = ((BORDER_SIZE+tile_width)*i+BORDER_SIZE, (BORDER_SIZE+tile_height)*j+BORDER_SIZE)
             
-            # Cool idea: use matrix instead of objects to keep track of tile
-            #   surface (start/end)
             tmp_x, tmp_y = tile_coord_grid[i, j]
             raw_matrix[counter][0] = tmp_x
             raw_matrix[counter][1] = tmp_y
