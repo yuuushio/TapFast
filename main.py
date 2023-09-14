@@ -6,9 +6,8 @@ import random
 pygame.init()
 
 # Constants
-SCREEN_WIDTH = 600
-SCREEN_HEIGHT = 600
-TILE_SIZE = 50
+SCREEN_WIDTH = 300
+SCREEN_HEIGHT = 300
 
 BORDER_SIZE = 1
 
@@ -23,17 +22,19 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Don't Tap")
 hl_tile = {}
 
+
 def calc_true_res(nx, ny):
-    # calculate left over w/h after taking away borders
-    # take away border_size to account for oth indexes (for both i and j)
-    w = SCREEN_WIDTH - (nx*BORDER_SIZE) - BORDER_SIZE
-    h = SCREEN_HEIGHT - (ny*BORDER_SIZE) - BORDER_SIZE
+    # There are `num_tiles - 1` border *between* the tiles. 
+    #  Then +1 border on right and +1 border on the left
+    #  == width - ((nx - 1)*bs + 2*bs)
+    #  == " - bs(nx+1)
+    # This ensures that the true w/h are accurate--avoiding calculating for
+    #  edge-cases when calculating coordinates/position of tiles with their borders.
+    w = SCREEN_WIDTH - (nx + 1) * BORDER_SIZE
+    h = SCREEN_HEIGHT - (ny + 1) * BORDER_SIZE
+    return (w, h)
 
-    return (w,h)
-
-
-
-def tile_array(num_tiles_x=6, num_tiles_y=6):
+def tile_array(num_tiles_x=4, num_tiles_y=4):
     # initial matrix which calculates and stores the x,y coordinates of each tile
     tile_coord_grid = np.empty((num_tiles_x, num_tiles_y), dtype=object)
     w, h = calc_true_res(num_tiles_x, num_tiles_y)
@@ -45,26 +46,26 @@ def tile_array(num_tiles_x=6, num_tiles_y=6):
 
 
     num_rows = num_tiles_x*num_tiles_y
-    # columns: x,y,x_end,y_end,time_clicked
+
+    # columns: x, y, x_end, y_end, time_clicked
     matrix_shape = (num_rows, 4)
 
     # Cool idea: use matrix--instead of objects--to keep track of individual tile
     #  properties; mainly, its x,y coordinates, and the area it occupies.
     raw_matrix = np.empty(matrix_shape)
+
     # Keeping track of row
     counter = 0
 
     for i in range(num_tiles_x):
         for j in range(num_tiles_y):
-            if i == 0 and j == 0:
-                tile_coord_grid[i, j] = (i+BORDER_SIZE, j+BORDER_SIZE)
-            elif i == 0:
-                tile_coord_grid[i, j] = (i+BORDER_SIZE, (BORDER_SIZE+tile_height)*j+BORDER_SIZE)
-            elif j == 0:
-                tile_coord_grid[i, j] = ((BORDER_SIZE+tile_width)*i+BORDER_SIZE, j+BORDER_SIZE)
-            else:
-                # Another border_size--after it's done calculating the coordinates--to shift things
-                tile_coord_grid[i, j] = ((BORDER_SIZE+tile_width)*i+BORDER_SIZE, (BORDER_SIZE+tile_height)*j+BORDER_SIZE)
+            # `i/j * (width/height + border_size)` is used to calculate the tile position
+            #   with its right border.
+            # And then we shift (the x/y position) by another BORDER_SIZE to 
+            #  add the left-border to current tile.
+            x = i * (tile_width + BORDER_SIZE) + BORDER_SIZE
+            y = j * (tile_height + BORDER_SIZE) + BORDER_SIZE
+            tile_coord_grid[i, j] = (x, y)
             
             tmp_x, tmp_y = tile_coord_grid[i, j]
             raw_matrix[counter][0] = tmp_x
@@ -81,7 +82,7 @@ def tile_array(num_tiles_x=6, num_tiles_y=6):
             
 
 
-def draw_tile(x, y, color, border_color, num_tiles_x=6, num_tiles_y=6, border_thickness=1):
+def draw_tile(x, y, color, border_color, num_tiles_x=4, num_tiles_y=4, border_thickness=1):
     # Draw the outer rectangle (border)
 
 
@@ -90,9 +91,6 @@ def draw_tile(x, y, color, border_color, num_tiles_x=6, num_tiles_y=6, border_th
     tile_width = w//num_tiles_x
     tile_height = h//num_tiles_y
     
-    # Draw the inner rectangle (main tile)
-    # pygame.draw.rect(screen, color, (x+border_thickness//2, y+border_thickness//2, tile_width-border_thickness, tile_height-border_thickness))
-
 
     pygame.draw.rect(screen, color, (x, y, tile_width, tile_height))
 
@@ -123,7 +121,7 @@ def left_over_random(arr_len, initial_random_indexes, clicked_set, intensity):
 def main():
 
     running = True
-    num_tiles = 6
+    num_tiles = 4
     tile_grid,rm = tile_array(num_tiles, num_tiles)
     intensity = 6
     clicked_stack = set()
@@ -167,7 +165,7 @@ def main():
             #     color = BLACK
             if sub_counter in rand_indexes:
                 color = BLACK
-            draw_tile(x_pos, y_pos, color, BLACK, num_tiles)
+            draw_tile(x_pos, y_pos, color, BLACK, num_tiles,num_tiles)
 
             sub_counter += 1
         
