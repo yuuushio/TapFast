@@ -10,7 +10,7 @@ SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 600
 TILE_SIZE = 50
 
-BORDER_SIZE = 5
+BORDER_SIZE = 1
 
 # Colors
 WHITE = (255, 255, 255)
@@ -21,6 +21,7 @@ BROWN = (41, 37, 34)
 # Set up the display
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Don't Tap")
+hl_tile = {}
 
 def calc_true_res(nx, ny):
     # calculate left over w/h after taking away borders
@@ -44,11 +45,13 @@ def tile_array(num_tiles_x=6, num_tiles_y=6):
 
 
     num_rows = num_tiles_x*num_tiles_y
+    # columns: x,y,x_end,y_end,time_clicked
     matrix_shape = (num_rows, 4)
 
     # Cool idea: use matrix--instead of objects--to keep track of individual tile
     #  properties; mainly, its x,y coordinates, and the area it occupies.
     raw_matrix = np.empty(matrix_shape)
+    # Keeping track of row
     counter = 0
 
     for i in range(num_tiles_x):
@@ -93,6 +96,18 @@ def draw_tile(x, y, color, border_color, num_tiles_x=6, num_tiles_y=6, border_th
 
     pygame.draw.rect(screen, color, (x, y, tile_width, tile_height))
 
+# Utility function to get the index/position of the clicked tile
+def get_tile_index(rm, ct):
+    index = 0
+    # print(ct)
+    for tile in rm:
+        # check if x,y match
+        if ct[0] == tile[0] and ct[1] == tile[1]:
+            return index
+        else:
+            index += 1
+
+
 
 def main():
 
@@ -103,7 +118,9 @@ def main():
     tile_grid,rm = tile_array(num_tiles, num_tiles)
 
     while running:
+        clicked_tile = None
         screen.fill(WHITE)
+        current_time = pygame.time.get_ticks()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -113,7 +130,11 @@ def main():
                 print(x,y)
 
                 # Condition that returns which tile was clicked by the mouse
-                print(rm[(rm[:, 0] < x) & (x <= rm[:, 2]) & (rm[:, 1] < y) & (y <= rm[:, 3])])
+                clicked_tile = rm[(rm[:, 0] <= x) & (x <= rm[:, 2]) & (rm[:, 1] <= y) & (y <= rm[:, 3])]
+                # print("clicked_tile!!", clicked_tile[0])
+                index = get_tile_index(rm, clicked_tile[0])
+
+                print(index)
 
 
                 print("Don't Tap!")
@@ -122,10 +143,13 @@ def main():
                     # running = False
 
         screen.fill(BROWN)
-        for i in range(num_tiles):
-            for j in range(num_tiles):
-                x_pos, y_pos = tile_grid[i, j]
-                draw_tile(x_pos, y_pos, RED, BLACK, num_tiles)
+        for tile in rm:
+            x_pos, y_pos = tile[0], tile[1]
+            draw_tile(x_pos, y_pos, WHITE, BLACK, num_tiles)
+
+        if clicked_tile is not None and len(clicked_tile) != 0:
+            draw_tile(clicked_tile[0, 0], clicked_tile[0, 1], BLACK, WHITE)
+
 
         pygame.display.flip()
         pygame.time.Clock().tick(60)
