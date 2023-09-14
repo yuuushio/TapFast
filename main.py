@@ -99,7 +99,6 @@ def draw_tile(x, y, color, border_color, num_tiles_x=6, num_tiles_y=6, border_th
 # Utility function to get the index/position of the clicked tile
 def get_tile_index(rm, ct):
     index = 0
-    # print(ct)
     for tile in rm:
         # check if x,y match
         if ct[0] == tile[0] and ct[1] == tile[1]:
@@ -131,11 +130,10 @@ def main():
 
                 # Condition that returns which tile was clicked by the mouse
                 clicked_tile = rm[(rm[:, 0] <= x) & (x <= rm[:, 2]) & (rm[:, 1] <= y) & (y <= rm[:, 3])]
-                # print("clicked_tile!!", clicked_tile[0])
                 index = get_tile_index(rm, clicked_tile[0])
 
-                print(index)
-
+                # Map the clicked time index with the time it was clicked at
+                hl_tile[index] = current_time
 
                 print("Don't Tap!")
                     # y_position = SCREEN_HEIGHT - TILE_SIZE
@@ -143,12 +141,23 @@ def main():
                     # running = False
 
         screen.fill(BROWN)
+        sub_counter = 0
+        color = WHITE
         for tile in rm:
             x_pos, y_pos = tile[0], tile[1]
-            draw_tile(x_pos, y_pos, WHITE, BLACK, num_tiles)
+            if sub_counter in hl_tile:
+                if current_time - hl_tile[sub_counter] < 100:
+                    draw_tile(x_pos, y_pos, BLACK, BLACK, num_tiles)
+                else: 
+                    draw_tile(x_pos, y_pos, color, BLACK, num_tiles)
+            else: 
+                draw_tile(x_pos, y_pos, color, BLACK, num_tiles)
 
-        if clicked_tile is not None and len(clicked_tile) != 0:
-            draw_tile(clicked_tile[0, 0], clicked_tile[0, 1], BLACK, WHITE)
+
+            sub_counter += 1
+        
+        # if clicked_tile is not None and len(clicked_tile) != 0:
+        #     draw_tile(clicked_tile[0, 0], clicked_tile[0, 1], BLACK, WHITE)
 
 
         pygame.display.flip()
