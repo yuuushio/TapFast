@@ -106,20 +106,34 @@ def get_tile_index(rm, ct):
         else:
             index += 1
 
+def random_tiles(arr_len, clicked_set, intensity):
+    selection = set(range(arr_len)) - clicked_set
+    return random.sample(list(selection), intensity)
+
+
+def left_over_random(arr_len, initial_random_indexes, clicked_set, intensity):
+    # take away the clicked indexes from the population
+    selection = list(set(range(arr_len)) - clicked_set)
+
+    # how many number of tiles do we need to calculate:
+    rm_intensity = intensity - len(set(initial_random_indexes) - clicked_set)
+    return list(set(initial_random_indexes) - clicked_set) + random.sample(selection, rm_intensity)
 
 
 def main():
 
     running = True
-    y_position = SCREEN_HEIGHT - TILE_SIZE
-    x_position = random.randint(0, SCREEN_WIDTH - TILE_SIZE)
     num_tiles = 6
     tile_grid,rm = tile_array(num_tiles, num_tiles)
+    intensity = 6
+    clicked_stack = set()
+    rand_indexes = random_tiles(rm.shape[0], clicked_stack, intensity)
 
     while running:
         clicked_tile = None
         screen.fill(WHITE)
         current_time = pygame.time.get_ticks()
+        # print(rm.shape)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -132,33 +146,31 @@ def main():
                 clicked_tile = rm[(rm[:, 0] <= x) & (x <= rm[:, 2]) & (rm[:, 1] <= y) & (y <= rm[:, 3])]
                 index = get_tile_index(rm, clicked_tile[0])
 
+                clicked_stack.add(index)
+
                 # Map the clicked time index with the time it was clicked at
                 hl_tile[index] = current_time
 
                 print("Don't Tap!")
-                    # y_position = SCREEN_HEIGHT - TILE_SIZE
-                    # x_position = random.randint(0, SCREEN_WIDTH - TILE_SIZE)
-                    # running = False
 
         screen.fill(BROWN)
-        sub_counter = 0
-        color = WHITE
-        for tile in rm:
-            x_pos, y_pos = tile[0], tile[1]
-            if sub_counter in hl_tile:
-                if current_time - hl_tile[sub_counter] < 100:
-                    draw_tile(x_pos, y_pos, BLACK, BLACK, num_tiles)
-                else: 
-                    draw_tile(x_pos, y_pos, color, BLACK, num_tiles)
-            else: 
-                draw_tile(x_pos, y_pos, color, BLACK, num_tiles)
+        sub_counter = 0 # tile index counter
 
+        if len(clicked_stack) != 0:
+            rand_indexes = left_over_random(rm.shape[0], rand_indexes, clicked_stack, intensity)
+            clicked_stack.clear()
+
+        for tile in rm:
+            color = WHITE
+            x_pos, y_pos = tile[0], tile[1]
+            # if sub_counter in hl_tile and current_time - hl_tile[sub_counter] < 100:
+            #     color = BLACK
+            if sub_counter in rand_indexes:
+                color = BLACK
+            draw_tile(x_pos, y_pos, color, BLACK, num_tiles)
 
             sub_counter += 1
         
-        # if clicked_tile is not None and len(clicked_tile) != 0:
-        #     draw_tile(clicked_tile[0, 0], clicked_tile[0, 1], BLACK, WHITE)
-
 
         pygame.display.flip()
         pygame.time.Clock().tick(60)
