@@ -6,8 +6,8 @@ import random
 pygame.init()
 
 # Constants
-SCREEN_WIDTH = 300
-SCREEN_HEIGHT = 300
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 800
 
 BORDER_SIZE = 1
 
@@ -24,7 +24,7 @@ hl_tile = {}
 
 
 def calc_true_res(nx, ny):
-    # There are `num_tiles - 1` border *between* the tiles. 
+    # There are `num_tiles - 1` borders *between* the tiles. 
     #  Then +1 border on right and +1 border on the left
     #  == width - ((nx - 1)*bs + 2*bs)
     #  == " - bs(nx+1)
@@ -42,7 +42,18 @@ def tile_array(num_tiles_x=4, num_tiles_y=4):
     tile_width = w//num_tiles_x
     tile_height = h//num_tiles_y
 
-    print("tile size:", tile_width, tile_height)
+    
+
+    # Calculate the total width occupied by the tiles and the borders combined.
+    total_tile_width = tile_width * num_tiles_x + BORDER_SIZE * (num_tiles_x + 1)
+
+    # Calculate the width error--difference between the screen width
+    # and the total width occupied by the tiles and borders.
+    # This error represents the number of pixels that are left out due to rounding down.
+    width_error = SCREEN_WIDTH - total_tile_width
+
+    total_tile_height = tile_height * num_tiles_y + BORDER_SIZE * (num_tiles_y + 1)
+    height_error = SCREEN_HEIGHT - total_tile_height
 
 
     num_rows = num_tiles_x*num_tiles_y
@@ -65,6 +76,30 @@ def tile_array(num_tiles_x=4, num_tiles_y=4):
             #  add the left-border to current tile.
             x = i * (tile_width + BORDER_SIZE) + BORDER_SIZE
             y = j * (tile_height + BORDER_SIZE) + BORDER_SIZE
+
+            # Distribute the width error across the tiles.
+            # If the current tile's index (i) is less than the width error, 
+            # add an extra pixel to its x position.
+            # This effectively spreads the error pixels across the first few tiles.
+            if i < width_error:
+                x += i
+            else:
+                # Once all error pixels are distributed, add the total width error
+                # to the x position of the remaining tiles.
+                # This ensures that all tiles are positioned correctly.
+                x += width_error
+
+
+            # Distribute the height error across the tiles.
+            # If the current tile's index (j) is less than the height error, 
+            # add an extra pixel to its y position.
+            if j < height_error:
+                y += j
+            else:
+                # Once all error pixels are distributed, add the total height error
+                # to the y position of the remaining tiles.
+                y += height_error
+
             tile_coord_grid[i, j] = (x, y)
             
             tmp_x, tmp_y = tile_coord_grid[i, j]
@@ -121,7 +156,7 @@ def left_over_random(arr_len, initial_random_indexes, clicked_set, intensity):
 def main():
 
     running = True
-    num_tiles = 4
+    num_tiles = 10
     tile_grid,rm = tile_array(num_tiles, num_tiles)
     intensity = 6
     clicked_stack = set()
@@ -142,12 +177,14 @@ def main():
 
                 # Condition that returns which tile was clicked by the mouse
                 clicked_tile = rm[(rm[:, 0] <= x) & (x <= rm[:, 2]) & (rm[:, 1] <= y) & (y <= rm[:, 3])]
-                index = get_tile_index(rm, clicked_tile[0])
 
-                clicked_stack.add(index)
+                if len(clicked_tile) != 0: 
+                    index = get_tile_index(rm, clicked_tile[0])
 
-                # Map the clicked time index with the time it was clicked at
-                hl_tile[index] = current_time
+                    clicked_stack.add(index)
+
+                    # Map the clicked time index with the time it was clicked at
+                    hl_tile[index] = current_time
 
                 print("Don't Tap!")
 
